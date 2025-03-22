@@ -15,14 +15,13 @@ st.subheader("🔐 Enter Your Encryption Passphrase")
 
 if "unlocked" not in st.session_state:
     passphrase = st.text_input("Enter your passphrase to unlock credentials", type="password")
-    if st.button("Unlock"):
-        if passphrase != "":
-            st.session_state["passphrase"] = passphrase
-            st.session_state["unlocked"] = True
-            st.experimental_rerun()
-        else:
-            st.warning("Passphrase is required to proceed.")
-    st.stop()
+   if st.button("Unlock"):
+    if passphrase != "":
+        st.session_state["passphrase"] = passphrase
+        st.session_state["unlocked"] = True
+        st.rerun()
+    else:
+        st.warning("Passphrase is required to proceed.")
 
 # --- Section: OpenAI API Key ---
 st.subheader("Step 1: Enter Your OpenAI API Key")
