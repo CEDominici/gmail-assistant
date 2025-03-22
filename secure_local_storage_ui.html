@@ -51,15 +51,15 @@
     clearBtn.onclick = clearAllCredentials;
     document.body.appendChild(clearBtn);
 
-    // Load stored values and auto-fill fields
     const passphraseInput = document.querySelector("input[type='password']");
+    const apiInput = document.querySelector("input[placeholder='Paste your OpenAI API Key']");
+
     if (passphraseInput) {
       passphraseInput.addEventListener("change", () => {
         const pass = passphraseInput.value;
         const apiKey = loadDecrypted("openai_api_key", pass);
         const creds = loadDecrypted("gmail_credentials", pass);
 
-        const apiInput = document.querySelector("input[placeholder='Paste your OpenAI API Key']");
         if (apiInput && apiKey) apiInput.value = apiKey;
 
         const fileInput = document.querySelector("input[type='file']");
@@ -71,19 +71,25 @@
           console.log("Gmail credentials decrypted and loaded.");
         }
       });
+    }
 
-      // Auto-save API key when user blurs or presses enter
-      const apiInput = document.querySelector("input[placeholder='Paste your OpenAI API Key']");
-      if (apiInput) {
-        apiInput.addEventListener("blur", () => {
-          const value = apiInput.value;
-          const pass = passphraseInput.value;
-          if (value && pass) {
-            window.AIEmailSecureStorage.saveEncrypted("openai_api_key", value, pass);
-            console.log("API Key saved on blur.");
-          }
-        });
-      }
+    // Auto-save API key when user blurs or presses enter
+    if (apiInput && passphraseInput) {
+      const saveKey = () => {
+        const value = apiInput.value;
+        const pass = passphraseInput.value;
+        if (value && pass) {
+          window.AIEmailSecureStorage.saveEncrypted("openai_api_key", value, pass);
+          console.log("API Key saved.");
+        }
+      };
+      apiInput.addEventListener("blur", saveKey);
+      apiInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          saveKey();
+        }
+      });
     }
   });
 
