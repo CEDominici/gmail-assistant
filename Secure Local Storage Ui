@@ -1,0 +1,49 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+  // Generate basic browser fingerprint
+  function getDeviceFingerprint() {
+    return CryptoJS.SHA256(
+      navigator.userAgent + screen.width + screen.height + Intl.DateTimeFormat().resolvedOptions().timeZone
+    ).toString();
+  }
+
+  // Derive encryption key using passphrase or fingerprint
+  function getEncryptionKey(passphrase) {
+    const base = passphrase && passphrase.length > 0 ? passphrase : getDeviceFingerprint();
+    return CryptoJS.SHA256(base).toString();
+  }
+
+  // Save data to localStorage encrypted
+  function saveEncrypted(keyName, data, passphrase) {
+    const key = getEncryptionKey(passphrase);
+    const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(data), key).toString();
+    localStorage.setItem(keyName, ciphertext);
+  }
+
+  // Load and decrypt data from localStorage
+  function loadDecrypted(keyName, passphrase) {
+    const key = getEncryptionKey(passphrase);
+    const ciphertext = localStorage.getItem(keyName);
+    if (!ciphertext) return null;
+    try {
+      const bytes = CryptoJS.AES.decrypt(ciphertext, key);
+      return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    } catch (e) {
+      console.warn("Failed to decrypt", keyName);
+      return null;
+    }
+  }
+
+  // Clear all stored credentials and reload the page
+  function clearAllCredentials() {
+    localStorage.clear();
+    location.reload();
+  }
+
+  // Expose to Streamlit through window
+  window.AIEmailSecureStorage = {
+    saveEncrypted,
+    loadDecrypted,
+    clearAllCredentials
+  };
+</script>
