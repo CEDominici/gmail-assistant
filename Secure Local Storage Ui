@@ -40,6 +40,40 @@
     location.reload();
   }
 
+  // Add a clear credentials button in the UI dynamically
+  document.addEventListener("DOMContentLoaded", () => {
+    const clearBtn = document.createElement("button");
+    clearBtn.innerText = "🧼 Clear All Credentials";
+    clearBtn.style.margin = "1em auto";
+    clearBtn.style.display = "block";
+    clearBtn.style.padding = "0.5em 1em";
+    clearBtn.style.fontSize = "1em";
+    clearBtn.onclick = clearAllCredentials;
+    document.body.appendChild(clearBtn);
+
+    // Load stored values and auto-fill fields
+    const passphraseInput = document.querySelector("input[type='password']");
+    if (passphraseInput) {
+      passphraseInput.addEventListener("change", () => {
+        const pass = passphraseInput.value;
+        const apiKey = loadDecrypted("openai_api_key", pass);
+        const creds = loadDecrypted("gmail_credentials", pass);
+
+        const apiInput = document.querySelector("input[placeholder='Paste your OpenAI API Key']");
+        if (apiInput && apiKey) apiInput.value = apiKey;
+
+        const fileInput = document.querySelector("input[type='file']");
+        if (fileInput && creds) {
+          const dataTransfer = new DataTransfer();
+          const file = new File([JSON.stringify(creds)], "credentials.json", { type: "application/json" });
+          dataTransfer.items.add(file);
+          fileInput.files = dataTransfer.files;
+          console.log("Gmail credentials decrypted and loaded.");
+        }
+      });
+    }
+  });
+
   // Expose to Streamlit through window
   window.AIEmailSecureStorage = {
     saveEncrypted,
