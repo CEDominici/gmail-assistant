@@ -2,11 +2,12 @@ import streamlit as st
 import streamlit.components.v1 as components
 import subprocess
 
-# --- Inject the custom HTML/JS (video background + encryption logic) ---
+# 🚨 THIS MUST COME FIRST!
+st.set_page_config(page_title="AI Email Assistant", layout="centered")
+
+# Inject custom HTML/JS (encryption logic + background video)
 components.html(open("secure_local_storage_ui.html").read(), height=0)
 
-# --- Page Config ---
-st.set_page_config(page_title="AI Email Assistant", layout="centered")
 st.title("AI Email Assistant (MVP)")
 
 # --- Passphrase Entry (required) ---
