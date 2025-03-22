@@ -1,38 +1,57 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import subprocess
 
-# --- Streamlit page configuration ---
+# --- Inject the custom HTML/JS (video background + encryption logic) ---
+components.html(open("secure_local_storage_ui.html").read(), height=0)
+
+# --- Page Config ---
 st.set_page_config(page_title="AI Email Assistant", layout="centered")
 st.title("AI Email Assistant (MVP)")
 
-# --- OpenAI API Key Input Section ---
+# --- Passphrase Entry (required) ---
+st.subheader("🔐 Enter Your Encryption Passphrase")
+
+if "unlocked" not in st.session_state:
+    passphrase = st.text_input("Enter your passphrase to unlock credentials", type="password")
+    if st.button("Unlock"):
+        if passphrase != "":
+            st.session_state["passphrase"] = passphrase
+            st.session_state["unlocked"] = True
+            st.experimental_rerun()
+        else:
+            st.warning("Passphrase is required to proceed.")
+    st.stop()
+
+# --- Section: OpenAI API Key ---
+st.subheader("Step 1: Enter Your OpenAI API Key")
 api_key = st.text_input("Paste your OpenAI API Key", type="password")
-if st.button("Save Key"):
-    # Save the key to a local file for use in scripts
-    with open("openai_key.txt", "w") as f:
-        f.write(api_key)
-    st.success("API Key saved locally.")
+if st.button("🔒 Save API Key Securely"):
+    components.html(f"""
+    <script>
+      window.AIEmailSecureStorage.saveEncrypted("openai_api_key", "{api_key}", "{st.session_state['passphrase']}");
+    </script>
+    """, height=0)
+    st.success("API Key saved to secure local storage.")
 
-# --- Step 1: Gmail OAuth Credential Upload Section ---
-st.subheader("Step 1: Upload your Google OAuth credentials JSON file")
-
-# File uploader: lets the user upload their `credentials.json` file
-uploaded_file = st.file_uploader("Choose your `credentials.json` file", type=["json"])
+# --- Section: Gmail JSON Upload ---
+st.subheader("Step 2: Upload Gmail OAuth JSON (credentials.json)")
+uploaded_file = st.file_uploader("Upload your credentials.json file", type=["json"])
 
 if uploaded_file is not None:
-    try:
-        # Save the uploaded file to the project root as `credentials.json`
-        with open("credentials.json", "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        st.success("Credentials file saved successfully!")
-    except Exception as e:
-        # Display any error that happens during file save
-        st.error(f"Failed to save file: {e}")
+    gmail_json = uploaded_file.read().decode("utf-8").replace("\\", "\\\\").replace('"', '\\"')
+    if st.button("🔒 Save Gmail Credentials Securely"):
+        components.html(f"""
+        <script>
+          const creds = JSON.parse("{gmail_json}");
+          window.AIEmailSecureStorage.saveEncrypted("gmail_credentials", creds, "{st.session_state['passphrase']}");
+        </script>
+        """, height=0)
+        st.success("Gmail credentials saved to secure local storage.")
 
-# --- Step 2: Gmail OAuth Trigger Button ---
+# --- Gmail Auth Placeholder ---
 st.subheader("Gmail Integration")
 if st.button("Authenticate with Gmail"):
-    # This will be connected to real Gmail auth logic
     st.info("Gmail auth flow not yet implemented.")
 
 # --- Section 1: Fetch historical email data for training ---
@@ -56,7 +75,7 @@ if st.button("Run Extraction + Save to Local Database"):
     subprocess.run(["python3", "scripts/extract_data.py"])
     st.success("Updated local database files.")
 
-# --- Footer: Status panel (placeholder) ---
+# --- Footer: Status panel ---
 st.markdown("---")
 st.markdown("**Last Sync:** Coming Soon")
 st.markdown("**Emails Processed:** Coming Soon")
