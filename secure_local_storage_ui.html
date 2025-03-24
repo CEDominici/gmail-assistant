@@ -1,26 +1,22 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script>
-  // Generate basic browser fingerprint
   function getDeviceFingerprint() {
     return CryptoJS.SHA256(
       navigator.userAgent + screen.width + screen.height + Intl.DateTimeFormat().resolvedOptions().timeZone
     ).toString();
   }
 
-  // Derive encryption key using passphrase or fingerprint
   function getEncryptionKey(passphrase) {
     const base = passphrase && passphrase.length > 0 ? passphrase : getDeviceFingerprint();
     return CryptoJS.SHA256(base).toString();
   }
 
-  // Save data to localStorage encrypted
   function saveEncrypted(keyName, data, passphrase) {
     const key = getEncryptionKey(passphrase);
     const ciphertext = CryptoJS.AES.encrypt(JSON.stringify(data), key).toString();
     localStorage.setItem(keyName, ciphertext);
   }
 
-  // Load and decrypt data from localStorage
   function loadDecrypted(keyName, passphrase) {
     const key = getEncryptionKey(passphrase);
     const ciphertext = localStorage.getItem(keyName);
@@ -34,66 +30,50 @@
     }
   }
 
-  // Clear all stored credentials and reload the page
   function clearAllCredentials() {
     localStorage.clear();
     location.reload();
   }
 
-  // Add a clear credentials button in the UI dynamically
-  document.addEventListener("DOMContentLoaded", () => {
-    const clearBtn = document.createElement("button");
-    clearBtn.innerText = "🧼 Clear All Credentials";
-    clearBtn.style.margin = "1em auto";
-    clearBtn.style.display = "block";
-    clearBtn.style.padding = "0.5em 1em";
-    clearBtn.style.fontSize = "1em";
-    clearBtn.onclick = clearAllCredentials;
-    document.body.appendChild(clearBtn);
+  const logContainer = document.createElement("div");
+  logContainer.id = "log-container";
+  logContainer.style.cssText = "padding: 1rem; font-family: 'Share Tech Mono', monospace; color: white; background: black; font-size: 1rem; white-space: pre-wrap; overflow-y: auto; height: 150px;";
+  document.body.appendChild(logContainer);
 
-    const passphraseInput = document.querySelector("input[type='password']");
-    const apiInput = document.querySelector("input[placeholder='Paste your OpenAI API Key']");
-
-    if (passphraseInput) {
-      passphraseInput.addEventListener("change", () => {
-        const pass = passphraseInput.value;
-        const apiKey = loadDecrypted("openai_api_key", pass);
-        const creds = loadDecrypted("gmail_credentials", pass);
-
-        if (apiInput && apiKey) apiInput.value = apiKey;
-
-        const fileInput = document.querySelector("input[type='file']");
-        if (fileInput && creds) {
-          const dataTransfer = new DataTransfer();
-          const file = new File([JSON.stringify(creds)], "credentials.json", { type: "application/json" });
-          dataTransfer.items.add(file);
-          fileInput.files = dataTransfer.files;
-          console.log("Gmail credentials decrypted and loaded.");
-        }
-      });
+  window.typeLogEntry = function(text) {
+    const line = document.createElement("span");
+    line.classList.add("log-line");
+    logContainer.appendChild(line);
+    
+    let i = 0;
+    function typeNextChar() {
+      if (i < text.length) {
+        line.textContent += text.charAt(i);
+        i++;
+        setTimeout(typeNextChar, 13); // 35% faster
+      } else {
+        const cursor = document.createElement("span");
+        cursor.className = "cursor";
+        cursor.textContent = "▌";
+        cursor.style.animation = "blink 1s step-start infinite";
+        line.appendChild(cursor);
+      }
     }
+    typeNextChar();
+  };
 
-    // Auto-save API key when user blurs or presses enter
-    if (apiInput && passphraseInput) {
-      const saveKey = () => {
-        const value = apiInput.value;
-        const pass = passphraseInput.value;
-        if (value && pass) {
-          window.AIEmailSecureStorage.saveEncrypted("openai_api_key", value, pass);
-          console.log("API Key saved.");
-        }
-      };
-      apiInput.addEventListener("blur", saveKey);
-      apiInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          saveKey();
-        }
-      });
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @keyframes blink {
+      50% { opacity: 0; }
     }
-  });
+    .cursor {
+      display: inline-block;
+      width: 1ch;
+    }
+  `;
+  document.head.appendChild(style);
 
-  // Expose to Streamlit through window
   window.AIEmailSecureStorage = {
     saveEncrypted,
     loadDecrypted,
