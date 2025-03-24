@@ -2,6 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import subprocess
 import os
+import time
 
 # --- Page config must be first ---
 st.set_page_config(page_title="AI Email Assistant", layout="centered")
@@ -37,12 +38,12 @@ if "unlocked" not in st.session_state:
                 st.session_state["unlocked"] = True
                 st.session_state["passphrase"] = passphrase
 
-                # Save API Key
+                # Save API Key and Gmail credentials
                 components.html(f"""
                 <script>
                   window.AIEmailSecureStorage.saveEncrypted("openai_api_key", "{api_key}", "{passphrase}");
                   window.AIEmailSecureStorage.saveEncrypted("gmail_credentials", JSON.parse("{gmail_json}"), "{passphrase}");
-                  window.typeLogEntry?.("[00:00:00] Credentials saved and encrypted.");
+                  window.typeLogEntry?.("[{time.strftime('%H:%M:%S')}] Credentials saved and encrypted.");
                 </script>
                 """, height=0)
                 st.rerun()
@@ -61,11 +62,11 @@ if "unlocked" not in st.session_state:
 # --- Main Dashboard ---
 st.title("📬 AI Email Assistant Dashboard")
 
-# --- Section: Gmail Auth Placeholder ---
+# --- Gmail Auth Placeholder ---
 st.subheader("Gmail Integration")
 if st.button("Authenticate with Gmail"):
     st.info("Gmail auth flow not yet implemented.")
-    frontend_log("[00:00:00] Gmail auth attempted.")
+    frontend_log("Gmail auth attempted.")
 
 # --- Section 1: Fetch historical email data for training ---
 st.subheader("1. Fetch Email Data for Training")
@@ -73,7 +74,7 @@ if st.button("Run Fetch + Save to local JSONL"):
     st.info("Running email fetch script...")
     subprocess.run(["python3", "scripts/fetch_emails.py"])
     st.success("Saved training data to data/email_training.jsonl")
-    frontend_log("[00:00:00] Email fetch script executed.")
+    frontend_log("Email fetch script executed.")
 
 # --- Section 2: Generate AI Drafts ---
 st.subheader("2. Generate Drafts for Unread Emails")
@@ -81,7 +82,7 @@ if st.button("Run AI Drafting"):
     st.info("Drafting replies...")
     subprocess.run(["python3", "scripts/create_drafts.py"])
     st.success("Drafts created (simulated).")
-    frontend_log("[00:00:00] Drafts created for unread emails.")
+    frontend_log("Drafts created for unread emails.")
 
 # --- Section 3: Extract and update structured data ---
 st.subheader("3. Extract & Update Structured Data")
@@ -89,7 +90,7 @@ if st.button("Run Extraction + Save to Local Database"):
     st.info("Extracting structured info...")
     subprocess.run(["python3", "scripts/extract_data.py"])
     st.success("Updated local database files.")
-    frontend_log("[00:00:00] Structured data extracted and saved.")
+    frontend_log("Structured data extracted and saved.")
 
 # --- Footer Log Panel ---
 st.markdown("---")
